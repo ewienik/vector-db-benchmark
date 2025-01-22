@@ -41,8 +41,8 @@ class ScyllaDbSearcher(BaseSearcher):
         if distance == Distance.COSINE:
             cls.insert_query = cls.conn.prepare(f"""
                 INSERT INTO {cls.queries_table_name} 
-                    (id, embedding, param_ef_search, top_results_limit, result_computed, result_ids, result_scores) 
-                VALUES (?, ?, {ef}, ?, false, NULL, NULL);
+                    (id, index_id, embedding, param_ef_search, top_results_limit, result_computed, result_keys, result_scores) 
+                VALUES (?, 1, ?, {ef}, ?, false, NULL, NULL);
             """)
         else:
             raise NotImplementedError(f"Unsupported distance metric {cls.distance}")
@@ -53,7 +53,7 @@ class ScyllaDbSearcher(BaseSearcher):
             ALLOW FILTERING;
         """)
         cls.results_query = cls.conn.prepare(f"""
-            SELECT result_ids, result_scores FROM {cls.queries_table_name} 
+            SELECT result_keys, result_scores FROM {cls.queries_table_name} 
             WHERE id = ?
         """)
 
@@ -70,7 +70,7 @@ class ScyllaDbSearcher(BaseSearcher):
         result = cls.conn.execute(cls.results_query.bind([id]))[0]
         if not any(result):
             return []
-        return zip(result.result_ids, result.result_scores)
+        return zip(result.result_keys, result.result_scores)
 
     @classmethod
     def delete_client(cls):
