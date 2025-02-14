@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 from cassandra.cluster import Cluster
 from cassandra.concurrent import execute_concurrent_with_args
-from cassandra.query import BatchStatement, ConsistencyLevel
+from cassandra.query import BatchStatement, ConsistencyLevel, BatchType
 
 from dataset_reader.base_reader import Record
 from engine.base_client import IncompatibilityError
@@ -63,7 +63,8 @@ class ScyllaDbUploader(BaseUploader):
     @classmethod
     def upload_batch(cls, batch: List[Record]):
         try:
-            batch_statement = BatchStatement(consistency_level=ConsistencyLevel.ANY)
+            batch_statement = BatchStatement(consistency_level=ConsistencyLevel.ANY, 
+                                             batch_type=BatchType.UNLOGGED)
             for record in batch:
                 batch_statement.add(cls.insert_query, (record.id, record.vector))
             cls.conn.execute(batch_statement)
