@@ -19,6 +19,7 @@ class ScyllaDbConfigurator(BaseConfigurator):
         self.process_data_index_name = self.config["process_data_index_name"]
         self.indexes_table_name = self.config["indexes_table_name"]
         self.queries_table_name = self.config["queries_table_name"]
+        self.dimensions = self.config["dimensions"]
 
         print(f"Using {cassandra.__version__} version of Cassandra driver")
         self.cluster = Cluster([self.config["host"]])
@@ -51,7 +52,7 @@ class ScyllaDbConfigurator(BaseConfigurator):
                     self.conn.execute(f"""
                         UPDATE {self.keyspace_name}.{self.indexes_table_name} 
                         SET canceled = true
-                        WHERE id = {row.id};
+                        WHERE id = '{row.id}'
                     """)
 
                 counter = 0
@@ -81,7 +82,7 @@ class ScyllaDbConfigurator(BaseConfigurator):
                 id BIGINT PRIMARY KEY,
                 description TEXT,
                 processed BOOLEAN,
-                embedding LIST<FLOAT>
+                embedding VECTOR<FLOAT, {self.dimensions}>
             );
         """)
         self.conn.execute(f"""
@@ -89,14 +90,14 @@ class ScyllaDbConfigurator(BaseConfigurator):
         """)
         self.conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {self.data_summary_table_name} (
-                id INT PRIMARY KEY,
+                id TEXT PRIMARY KEY,
                 requested_elements_count COUNTER
             )
         """)
         print(f"Table '{self.data_table_name}' created (if not exists) in keyspace '{self.keyspace_name}'.")
         self.conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {self.indexes_table_name} (
-                id INT PRIMARY KEY,
+                id TEXT PRIMARY KEY,
                 indexed_elements_count INT,
                 param_m INT,
                 param_ef_construct INT,
@@ -109,8 +110,8 @@ class ScyllaDbConfigurator(BaseConfigurator):
         self.conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {self.queries_table_name} (
                 id INT PRIMARY KEY,
-                vector_index_id INT,
-                embedding LIST<FLOAT>,
+                vector_index_id TEXT,
+                embedding VECTOR<FLOAT, {self.dimensions}>,
                 param_ef_search INT,
                 top_results_limit INT,
                 result_computed BOOLEAN,
