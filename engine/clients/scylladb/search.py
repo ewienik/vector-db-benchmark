@@ -42,6 +42,7 @@ class ScyllaDbSearcher(BaseSearcher):
         cls.config = get_db_config(host, connection_params)
         cls.keyspace_name = cls.config["keyspace_name"]
         cls.queries_table_name = cls.config["queries_table_name"]
+        cls.data_table_name = cls.config["data_table_name"]
         cls.usearch_host = cls.config["usearch_host"]
 
         cls.cluster = Cluster([cls.config["host"]])
@@ -53,7 +54,7 @@ class ScyllaDbSearcher(BaseSearcher):
             cls.insert_query = cls.conn.prepare(f"""
                 INSERT INTO {cls.queries_table_name} 
                     (id, vector_index_id, embedding, param_ef_search, top_results_limit, result_computed, result_keys, result_scores) 
-                VALUES (?, 1, ?, {ef}, ?, false, NULL, NULL);
+                VALUES (?, '{cls.keyspace_name}.{cls.data_table_name}', ?, {ef}, ?, false, NULL, NULL);
             """)
         else:
             raise NotImplementedError(f"Unsupported distance metric {cls.distance}")
@@ -89,7 +90,12 @@ class ScyllaDbSearcher(BaseSearcher):
 
         request = json.dumps({'embeddings': query.vector, 'limit': top})
         try:
-            cls.conn.execute(cls.proxy_query.bind([cls.usearch_host, 6080, '/indexes/1/ann', request]))
+            cls.conn.execute(cls.proxy_query.bind([
+                cls.usearch_host,
+                6080,
+                f'/api/v1/indexes/{cls.keyspace_name}.{cls.data_table_name}/ann',
+                request
+            ]))
             response = None
         except Exception as err:
             lines = str(err).splitlines()
