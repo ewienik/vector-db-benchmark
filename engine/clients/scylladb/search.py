@@ -88,12 +88,13 @@ class ScyllaDbSearcher(BaseSearcher):
         #    return []
         #return zip(result.result_keys, result.result_scores)
 
-        request = json.dumps({'embeddings': query.vector, 'limit': top})
+        index_id = f'{cls.keyspace_name}.{cls.data_table_name}'
+        request = json.dumps({'index_id': index_id, 'embeddings': query.vector, 'limit': top})
         try:
             cls.conn.execute(cls.proxy_query.bind([
                 cls.usearch_host,
-                6080,
-                f'/api/v1/indexes/{cls.keyspace_name}.{cls.data_table_name}/ann',
+                6081,
+                f'/api/v1/indexes/{index_id}/ann',
                 request
             ]))
             response = None
