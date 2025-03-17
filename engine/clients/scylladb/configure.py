@@ -15,6 +15,7 @@ class ScyllaDbConfigurator(BaseConfigurator):
         self.config = get_db_config(host, connection_params)
         self.keyspace_name = self.config["keyspace_name"]
         self.data_table_name = self.config["data_table_name"]
+        self.index_name = self.config["index_name"]
         self.data_summary_table_name = self.config["data_summary_table_name"]
         self.process_data_index_name = self.config["process_data_index_name"]
         self.indexes_table_name = self.config["indexes_table_name"]
@@ -45,21 +46,22 @@ class ScyllaDbConfigurator(BaseConfigurator):
         # TODO: uncommend after proper handling of vector types and indexes is implemented in CQL
         # As for now we cannot remove keyspace as it keeps information about indexes created in the past
         # self.conn.execute(f"DROP KEYSPACE IF EXISTS {self.keyspace_name};")
-        if self.indexes_table_exists():
-            rows = self.conn.execute(f"SELECT id FROM {self.keyspace_name}.{self.indexes_table_name}")
-            if any(rows):
-                for row in rows:
-                    self.conn.execute(f"""
-                        UPDATE {self.keyspace_name}.{self.indexes_table_name} 
-                        SET canceled = true
-                        WHERE id = '{row.id}'
-                    """)
+        #if self.indexes_table_exists():
+        #    rows = self.conn.execute(f"SELECT id FROM {self.keyspace_name}.{self.indexes_table_name}")
+        #    if any(rows):
+        #        for row in rows:
+        #            self.conn.execute(f"""
+        #                UPDATE {self.keyspace_name}.{self.indexes_table_name} 
+        #                SET canceled = true
+        #                WHERE id = '{row.id}'
+        #            """)
 
-                counter = 0
-                while self.has_any_rows(f"{self.keyspace_name}.{self.indexes_table_name}"):
-                    print(f"Waiting for indexes to be cleaned ({counter}s)", end="\r")
-                    time.sleep(1)
-                    counter += 1
+        #        counter = 0
+        #        while self.has_any_rows(f"{self.keyspace_name}.{self.indexes_table_name}"):
+        #            print(f"Waiting for indexes to be cleaned ({counter}s)", end="\r")
+        #            time.sleep(1)
+        #            counter += 1
+        self.conn.execute(f"DROP INDEX IF EXISTS {self.keyspace_name}.{self.index_name};")
         self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.indexes_table_name};")
         self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.data_table_name};")
         self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.data_summary_table_name};")

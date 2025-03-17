@@ -43,6 +43,7 @@ class ScyllaDbSearcher(BaseSearcher):
         cls.keyspace_name = cls.config["keyspace_name"]
         cls.queries_table_name = cls.config["queries_table_name"]
         cls.data_table_name = cls.config["data_table_name"]
+        cls.index_name = cls.config["index_name"]
         cls.usearch_host = cls.config["usearch_host"]
 
         cls.cluster = Cluster([cls.config["host"]])
@@ -93,7 +94,7 @@ class ScyllaDbSearcher(BaseSearcher):
             cls.conn.execute(cls.proxy_query.bind([
                 cls.usearch_host,
                 6080,
-                f'/api/v1/indexes/{cls.keyspace_name}.{cls.data_table_name}/ann',
+                f'/api/v1/indexes/{cls.keyspace_name}/{cls.index_name}/ann',
                 request
             ]))
             response = None

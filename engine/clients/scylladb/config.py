@@ -14,6 +14,7 @@ def get_db_config(host, connection_params):
         "password": SCYLLADB_PASSWORD,
         "keyspace_name": "vector_benchmark",
         "data_table_name": "vector_items",
+        "index_name": "ann_index",
         "data_summary_table_name": "vector_items_summary",
         "process_data_index_name": "vector_items_processed",
         "indexes_table_name": "vector_indexes",

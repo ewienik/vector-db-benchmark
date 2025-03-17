@@ -29,6 +29,7 @@ class ScyllaDbUploader(BaseUploader):
         cls.config = get_db_config(host, connection_params)
         cls.keyspace_name = cls.config["keyspace_name"]
         cls.data_table_name = cls.config["data_table_name"]
+        cls.index_name = cls.config["index_name"]
         cls.data_summary_table_name = cls.config["data_summary_table_name"]
         cls.indexes_table_name = cls.config["indexes_table_name"]
         cls.dimensions = cls.config["dimensions"]
@@ -48,15 +49,15 @@ class ScyllaDbUploader(BaseUploader):
         cls.update_requested_count_query = cls.conn.prepare(f"""
             UPDATE {cls.data_summary_table_name}
                 SET requested_elements_count = requested_elements_count + ?
-                WHERE id = '{cls.keyspace_name}.{cls.data_table_name}'
+                WHERE id = '{cls.keyspace_name}.{cls.index_name}'
         """)
         cls.get_requested_count_query = cls.conn.prepare(f"""
             SELECT requested_elements_count FROM {cls.data_summary_table_name}
-            WHERE id = '{cls.keyspace_name}.{cls.data_table_name}'
+            WHERE id = '{cls.keyspace_name}.{cls.index_name}'
         """)
         cls.get_processed_count_query = cls.conn.prepare(f"""
             SELECT indexed_elements_count FROM {cls.indexes_table_name}
-            WHERE id = '{cls.keyspace_name}.{cls.data_table_name}'
+            WHERE id = '{cls.keyspace_name}.{cls.index_name}'
         """)
 
         cls.upload_params = upload_params
@@ -105,7 +106,10 @@ class ScyllaDbUploader(BaseUploader):
             cls.conn.execute(f"""
                 INSERT INTO {cls.indexes_table_name}
                     (id, indexed_elements_count, param_m, param_ef_construct, param_ef_search, dimension, canceled)
-                VALUES ('{cls.keyspace_name}.{cls.data_table_name}', 0, {cls.param_m}, {cls.param_ef_construct}, {cls.default_ef_search}, {cls.dimensions}, false);
+                VALUES ('{cls.keyspace_name}.{cls.index_name}', 0, {cls.param_m}, {cls.param_ef_construct}, {cls.default_ef_search}, {cls.dimensions}, false);
+            """)
+            cls.conn.execute(f"""
+                CREATE INDEX {cls.index_name} ON {cls.data_table_name}(embedding) USING 'dummy-vector-backend'
             """)
             requested = cls.conn.execute(cls.get_requested_count_query).one().requested_elements_count
             processed = cls.conn.execute(cls.get_processed_count_query).one().indexed_elements_count
