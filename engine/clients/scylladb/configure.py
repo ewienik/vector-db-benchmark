@@ -61,11 +61,12 @@ class ScyllaDbConfigurator(BaseConfigurator):
         #            print(f"Waiting for indexes to be cleaned ({counter}s)", end="\r")
         #            time.sleep(1)
         #            counter += 1
-        self.conn.execute(f"DROP INDEX IF EXISTS {self.keyspace_name}.{self.index_name};")
-        self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.indexes_table_name};")
-        self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.data_table_name};")
-        self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.data_summary_table_name};")
-        self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.queries_table_name};")
+        self.conn.execute(f"DROP KEYSPACE IF EXISTS {self.keyspace_name};")
+        #self.conn.execute(f"DROP INDEX IF EXISTS {self.keyspace_name}.{self.index_name};")
+        #self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.indexes_table_name};")
+        #self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.data_table_name};")
+        #self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.data_summary_table_name};")
+        #self.conn.execute(f"DROP TABLE IF EXISTS {self.keyspace_name}.{self.queries_table_name};")
 
 
     def recreate(self, dataset: Dataset, collection_params):

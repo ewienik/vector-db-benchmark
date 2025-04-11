@@ -112,7 +112,7 @@ class ScyllaDbSearcher(BaseSearcher):
 
         if not any(response):
             return []
-        return zip(response['keys'], response['distances'])
+        return zip(response['primary_keys']['id'], response['distances'])
 
     @classmethod
     def delete_client(cls):
