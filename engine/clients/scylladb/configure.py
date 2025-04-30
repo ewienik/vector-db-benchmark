@@ -46,7 +46,7 @@ class ScyllaDbConfigurator(BaseConfigurator):
             CREATE TABLE IF NOT EXISTS {self.data_table_name} (
                 id BIGINT PRIMARY KEY,
                 embedding VECTOR<FLOAT, {self.dimensions}>
-            );
+            ) WITH cdc = {{'enabled': true}};
         """)
         print(f"Table '{self.data_table_name}' created (if not exists) in keyspace '{self.keyspace_name}'.")
 
@@ -57,6 +57,12 @@ class ScyllaDbConfigurator(BaseConfigurator):
             );
         """)
         print(f"Table '{self.data_summary_table_name}' created (if not exists) in keyspace '{self.keyspace_name}'.")
+
+        self.conn.execute(f"""
+            CREATE INDEX {self.index_name} ON {self.data_table_name}(embedding) USING 'vector_index'
+        """)
+        print(f"Index '{self.data_table_name}' created in keyspace '{self.keyspace_name}'.")
+
 
     def delete_client(self):
         self.cluster.shutdown()

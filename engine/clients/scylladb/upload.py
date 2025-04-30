@@ -78,10 +78,10 @@ class ScyllaDbUploader(BaseUploader):
 
 
     @classmethod
-    def get_index_size(cls):
+    def get_index_count(cls):
         while True:
             conn = HTTPConnection(f'{cls.config["usearch_host"]}:6080')
-            conn.request("GET", f'/api/v1/indexes/{cls.keyspace_name}/{cls.index_name}/size')
+            conn.request("GET", f'/api/v1/indexes/{cls.keyspace_name}/{cls.index_name}/count')
             response = conn.getresponse()
             if response.status == 200:
                 break;
@@ -99,15 +99,15 @@ class ScyllaDbUploader(BaseUploader):
             raise IncompatibilityError(f"Unsupported distance metric: {distance}")
 
         try:
-            cls.conn.execute(f"""
-                CREATE INDEX {cls.index_name} ON {cls.data_table_name}(embedding) USING 'dummy-vector-backend'
-            """)
+            #cls.conn.execute(f"""
+            #    CREATE INDEX {cls.index_name} ON {cls.data_table_name}(embedding) USING 'dummy-vector-backend'
+            #""")
             requested = cls.conn.execute(cls.get_requested_count_query).one().requested_elements_count
-            processed = cls.get_index_size()
+            processed = cls.get_index_count()
             while requested != processed:
                 sleep(1)
                 requested = cls.conn.execute(cls.get_requested_count_query).one().requested_elements_count
-                processed = cls.get_index_size()
+                processed = cls.get_index_count()
                 print(f"\rdbg: requested {requested}, processed {processed}", end="")
             print(f"\rdbg: requested {requested}, processed {processed}")
         except Exception as e:
